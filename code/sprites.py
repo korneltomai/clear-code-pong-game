@@ -7,10 +7,13 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.Surface(SIZE["paddle"], pygame.SRCALPHA)
         pygame.draw.rect(self.image, COLORS["paddle"], pygame.FRect((0, 0), (SIZE["paddle"])), 0, 5)
         self.rect = self.image.get_frect(center = POS["player"])
+        self.old_rect = self.rect.copy()
+
         self.speed = SPEED["player"]
         self.direction = 0
 
     def update(self, delta_time):
+        self.old_rect = self.rect.copy()
         self.get_direction()
         self.move(delta_time)
         
@@ -22,7 +25,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery += self.direction * self.speed * delta_time 
 
         self.rect.top = 0 if self.rect.top < 0 else self.rect.top
-        self.rect.bottom = 0 if self.rect.bottom > WINDOW_HEIGHT else self.rect.bottom
+        self.rect.bottom = WINDOW_HEIGHT if self.rect.bottom > WINDOW_HEIGHT else self.rect.bottom
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self, groups, paddle_sprites):
@@ -30,15 +33,23 @@ class Ball(pygame.sprite.Sprite):
         self.image = pygame.Surface(SIZE["ball"], pygame.SRCALPHA)
         pygame.draw.circle(self.image, COLORS["ball"], (SIZE["ball"][0] / 2, SIZE["ball"][1] / 2), SIZE["ball"][0] / 2)
         self.rect = self.image.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
+        self.old_rect = self.rect.copy()
+
+        self.paddle_sprites = paddle_sprites
+
         self.speed = SPEED["ball"]
         self.direction = pygame.Vector2(choice((-1, 1)), uniform(0.7, 0.8) * choice((-1, 1)))
 
     def update(self, delta_time):
+        self.old_rect = self.rect.copy()
         self.move(delta_time)
         self.wall_collision()
 
     def move(self, delta_time):
-        self.rect.center += self.direction * self.speed * delta_time 
+        self.rect.x += self.direction.x * self.speed * delta_time 
+        self.collision(True)
+        self.rect.y += self.direction.y * self.speed * delta_time 
+        self.collision(False)
 
     def wall_collision(self):
         if self.rect.top < 0:
@@ -56,3 +67,20 @@ class Ball(pygame.sprite.Sprite):
         elif self.rect.right > WINDOW_WIDTH:
             self.rect.right = WINDOW_WIDTH
             self.direction.x *= -1 
+
+    def collision(self, moving_horizontal):
+        for sprite in self.paddle_sprites:
+            if sprite.rect.colliderect(self.rect):
+                if moving_horizontal:
+                    if self.rect.right > sprite.rect.left and self.old_rect.right <= sprite.old_rect.left:
+                        self.rect.right = sprite.rect.left
+                    if self.rect.left < sprite.rect.right and self.old_rect.left >= sprite.old_rect.right:
+                        self.rect.left = sprite.rect.right
+                    self.direction.x *= -1
+                else:
+                    if self.rect.bottom > sprite.rect.top and self.old_rect.bottom <= sprite.old_rect.top:
+                        self.rect.bottom = sprite.rect.top
+                    if self.rect.top < sprite.rect.bottom and self.old_rect.top >= sprite.old_rect.bottom:
+                        self.rect.top = sprite.rect.bottom
+                    self.direction.y *= -1
+

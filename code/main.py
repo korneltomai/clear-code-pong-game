@@ -1,5 +1,7 @@
 from settings import * 
 from sprites import *
+from groups import AllSprites
+import json
 
 class Game():
     def __init__(self):
@@ -10,13 +12,21 @@ class Game():
         self.running = True
 
         # groups
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = AllSprites()
         self.paddle_sprites = pygame.sprite.Group()
 
         # sprites
         self.player = Player((self.all_sprites, self.paddle_sprites))
-        self.ball = Ball(self.all_sprites, self.paddle_sprites)
+        self.ball = Ball(self.all_sprites, self.paddle_sprites, self.update_score)
         self.opponent = Opponent((self.all_sprites, self.paddle_sprites), self.ball)
+
+        # score
+        try:
+            with open(join("data", "score.txt")) as score_file:
+                self.score = json.load(score_file)
+        except:
+            self.score = {"player": 0, "opponent": 0}
+        self.font = pygame.font.Font(None, 160)
 
     def run(self):
 
@@ -26,17 +36,34 @@ class Game():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                    with open(join("data", "score.txt"), "w") as score_file:
+                        json.dump(self.score, score_file)
 
             # update
             self.all_sprites.update(delta_time)
 
             # draw
             self.display_surface.fill(COLORS["bg"])
-            self.all_sprites.draw(self.display_surface)
+            self.display_score()
+            self.all_sprites.draw()
 
             pygame.display.update()
 
         pygame.quit()
+
+    def display_score(self):
+        player_score_surf = self.font.render(str(self.score["player"]), True, COLORS["bg detail"])
+        player_score_rect = player_score_surf.get_frect(center = (WINDOW_WIDTH / 2 + 100, WINDOW_HEIGHT / 2))
+        self.display_surface.blit(player_score_surf, player_score_rect)
+
+        opponent_score_surf = self.font.render(str(self.score["opponent"]), True, COLORS["bg detail"])
+        opponent_score_rect = opponent_score_surf.get_frect(center = (WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2))
+        self.display_surface.blit(opponent_score_surf, opponent_score_rect)
+
+        pygame.draw.line(self.display_surface, COLORS["bg detail"], (WINDOW_WIDTH / 2, 0), (WINDOW_WIDTH / 2, WINDOW_HEIGHT), 6)
+
+    def update_score(self, side):
+        self.score["player" if side == "player" else "opponent"] += 1
 
 if __name__ == "__main__":
     game = Game()

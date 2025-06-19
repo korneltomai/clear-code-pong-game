@@ -29,6 +29,9 @@ class Paddle(pygame.sprite.Sprite):
     def get_direction():
         pass
 
+    def reset():
+        pass
+
 class Player(Paddle):
     def __init__(self, groups):
         super().__init__(groups, POS["player"], SPEED["player"])
@@ -36,6 +39,10 @@ class Player(Paddle):
     def get_direction(self):
         keys = pygame.key.get_pressed()
         self.direction = int(keys[pygame.K_DOWN] or keys[pygame.K_s]) - int(keys[pygame.K_UP] or keys[pygame.K_w])
+
+    def reset(self):
+        self.rect.center = POS["player"]
+        self.speed = SPEED["player"]
 
 class Opponent(Paddle):
     def __init__(self, groups, ball):
@@ -50,12 +57,16 @@ class Opponent(Paddle):
         else:
             self.direction = -1
 
+    def reset(self):
+        self.rect.center = POS["opponent"]
+        self.speed = SPEED["opponent"]
+
 class Ball(pygame.sprite.Sprite):
     def __init__(self, groups, paddle_sprites, update_score):
         super().__init__(groups)
         self.image = pygame.Surface(SIZE["ball"], pygame.SRCALPHA)
         pygame.draw.circle(self.image, COLORS["ball"], (SIZE["ball"][0] / 2, SIZE["ball"][1] / 2), SIZE["ball"][0] / 2)
-        self.rect = self.image.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
+        self.rect = self.image.get_frect(center = POS["ball"])
         self.old_rect = self.rect.copy()
 
         self.shadow_surface = self.image.copy()
@@ -71,6 +82,8 @@ class Ball(pygame.sprite.Sprite):
         # movement
         self.speed = SPEED["ball"]
         self.direction = pygame.Vector2(choice((-1, 1)), uniform(0.7, 0.8) * choice((-1, 1)))
+        self.speed_up_event = pygame.event.custom_type()
+        pygame.time.set_timer(self.speed_up_event, 200)
 
     def update(self, delta_time):
         if self.reset_time >= 0:
@@ -85,6 +98,8 @@ class Ball(pygame.sprite.Sprite):
             self.collision(True)
             self.rect.y += self.direction.y * self.speed * delta_time 
             self.collision(False)
+
+            self.speed_up()
 
     def wall_collision(self):
         if self.rect.top < 0:
@@ -101,7 +116,8 @@ class Ball(pygame.sprite.Sprite):
 
     def reset(self):
         self.can_move = False
-        self.rect.center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+        self.rect.center = POS["ball"]
+        self.speed = SPEED["ball"]
         self.direction = pygame.Vector2(choice((-1, 1)), uniform(0.7, 0.8) * choice((-1, 1)))
         self.reset_time = pygame.time.get_ticks()
 
@@ -126,3 +142,7 @@ class Ball(pygame.sprite.Sprite):
                         self.rect.top = sprite.rect.bottom
                     self.direction.y *= -1
 
+    def speed_up(self):
+        for event in pygame.event.get():
+            if event.type == self.speed_up_event:
+                self.speed += 5

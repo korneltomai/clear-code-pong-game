@@ -8,8 +8,9 @@ class Game():
         pygame.init()
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption("Pong")
-        self.clock = pygame.time.Clock()
+        
         self.running = True
+        self.paused = True
 
         # groups
         self.all_sprites = AllSprites()
@@ -29,7 +30,28 @@ class Game():
         self.font = pygame.font.Font(None, 160)
 
     def run(self):
+        # the game will start paused and let the player start by pressing space or return
+        # we have to draw out everything once first
+        self.display_surface.fill(COLORS["bg"])
+        self.display_score()
+        self.all_sprites.draw()
 
+        pause_font = pygame.font.Font(None, 60)
+        pause_text_surf = pause_font.render("Press 'space' or 'return' to start the game!", True, "red")
+        pause_text_rect = pause_text_surf.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
+        self.display_surface.blit(pause_text_surf, pause_text_rect)
+
+        pygame.display.update()
+
+        while self.paused:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        self.paused = False
+                        self.ball.reset_time = pygame.time.get_ticks()
+                        self.clock = pygame.time.Clock()
+
+        # main game loop
         while self.running:
             delta_time = self.clock.tick(60) /  1000
 

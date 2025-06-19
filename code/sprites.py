@@ -43,7 +43,12 @@ class Opponent(Paddle):
         self.ball = ball
         
     def get_direction(self):
-        self.direction = 1 if self.rect.centery < self.ball.rect.centery else -1
+        if self.rect.centery == self.ball.rect.centery:
+            self.direction = 0
+        elif self.rect.centery < self.ball.rect.centery:
+            self.direction = 1
+        else:
+            self.direction = -1
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self, groups, paddle_sprites, update_score):
@@ -56,11 +61,11 @@ class Ball(pygame.sprite.Sprite):
         self.shadow_surface = self.image.copy()
         pygame.draw.circle(self.shadow_surface, COLORS["ball shadow"], (SIZE["ball"][0] / 2, SIZE["ball"][1] / 2), SIZE["ball"][0] / 2)
 
-        self.update_score = update_score
         self.paddle_sprites = paddle_sprites
+        self.update_score = update_score
 
         # reset
-        self.reset_time = pygame.time.get_ticks()
+        self.reset_time = -1
         self.can_move = False
 
         # movement
@@ -68,10 +73,11 @@ class Ball(pygame.sprite.Sprite):
         self.direction = pygame.Vector2(choice((-1, 1)), uniform(0.7, 0.8) * choice((-1, 1)))
 
     def update(self, delta_time):
-        self.old_rect = self.rect.copy()
-        self.move(delta_time)
-        self.wall_collision()
-        self.reset_timer()
+        if self.reset_time >= 0:
+            self.old_rect = self.rect.copy()
+            self.move(delta_time)
+            self.wall_collision()
+            self.reset_timer()
 
     def move(self, delta_time):
         if self.can_move:

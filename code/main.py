@@ -73,6 +73,10 @@ class Game():
                 pause_text_rect = pause_text_surf.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
                 self.display_surface.blit(pause_text_surf, pause_text_rect)
 
+                pause_text_surf = self.pause_font.render("Press 'r' to reset!", True, "red")
+                pause_text_rect = pause_text_surf.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 + 50))
+                self.display_surface.blit(pause_text_surf, pause_text_rect)
+
             pygame.display.update()
 
         pygame.quit()

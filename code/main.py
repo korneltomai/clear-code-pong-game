@@ -56,7 +56,7 @@ class Game():
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                             self.paused = False
-                            self.ball_sprites.sprites()[0].reset_time = pygame.time.get_ticks()
+                            self.ball_sprites.sprites()[0].create_time = pygame.time.get_ticks()
                             pygame.time.set_timer(self.spawn_power_up_event, 15000)
 
             # update only when the game is not paused

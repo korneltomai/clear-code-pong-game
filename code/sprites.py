@@ -116,7 +116,7 @@ class Ball(pygame.sprite.Sprite):
         self.update_score = update_score
 
         # reset
-        self.reset_time = -1
+        self.create_time = pygame.time.get_ticks()
         self.can_move = False
 
         # movement
@@ -126,14 +126,14 @@ class Ball(pygame.sprite.Sprite):
         pygame.time.set_timer(self.speed_up_event, 200)
 
     def update(self, delta_time):
-        if self.reset_time >= 0:
+        if self.can_move:
             self.old_rect = self.rect.copy()
             self.move(delta_time)
             self.wall_collision()
-            self.reset_timer()
+        else:
+            self.move_timer()
 
     def move(self, delta_time):
-        if self.can_move:
             self.rect.x += self.direction.x * self.speed * delta_time 
             self.collision(True)
             self.rect.y += self.direction.y * self.speed * delta_time 
@@ -153,9 +153,9 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.left < 20 or self.rect.right > WINDOW_WIDTH - 20:
             self.update_score("player" if self.rect.x < WINDOW_WIDTH / 2 else "opponent")
 
-    def reset_timer(self):
+    def move_timer(self):
         current_time = pygame.time.get_ticks()
-        if current_time - self.reset_time >= 2000:
+        if current_time - self.create_time >= 2000:
             self.can_move = True
 
     def collision(self, moving_horizontal):
@@ -219,7 +219,6 @@ class BallPowerUp(PowerUp):
 
     def active(self, ball):
         new_ball = Ball(self.ball_groups, self.paddle_sprites, self.update_score, self.rect.center)
-        new_ball.reset_time = pygame.time.get_ticks()
         new_ball.can_move = True
 
         new_ball.direction.x = ball.direction.x

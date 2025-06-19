@@ -1,6 +1,7 @@
 from settings import * 
 from sprites import *
 from groups import AllSprites
+from random import randint
 import json
 
 class Game():
@@ -15,11 +16,13 @@ class Game():
         # groups
         self.all_sprites = AllSprites()
         self.paddle_sprites = pygame.sprite.Group()
+        self.ball_sprites = pygame.sprite.Group()
+        self.powerup_sprites = pygame.sprite.Group()
 
         # sprites
         self.player = Player((self.all_sprites, self.paddle_sprites))
-        self.ball = Ball(self.all_sprites, self.paddle_sprites, self.update_score)
-        self.opponent = Opponent((self.all_sprites, self.paddle_sprites), self.ball)
+        Ball((self.all_sprites, self.ball_sprites), self.paddle_sprites, self.update_score)
+        self.opponent = Opponent((self.all_sprites, self.paddle_sprites), self.ball_sprites)
 
         # score
         try:
@@ -29,6 +32,9 @@ class Game():
             self.score = {"player": 0, "opponent": 0}
         self.font = pygame.font.Font(None, 160)
         self.pause_font = pygame.font.Font(None, 60)
+
+        # powerups
+        self.spawn_power_up_event = pygame.event.custom_type()
 
     def run(self):
         # main game loop
@@ -43,12 +49,15 @@ class Game():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
                         self.reset_game()
+                if event.type == self.spawn_power_up_event:
+                    self.spawn_powerup()
 
                 if self.paused:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                             self.paused = False
-                            self.ball.reset_time = pygame.time.get_ticks()
+                            self.ball_sprites.sprites()[0].reset_time = pygame.time.get_ticks()
+                            pygame.time.set_timer(self.spawn_power_up_event, 15000)
 
             # update only when the game is not paused
             if not self.paused:
@@ -82,12 +91,41 @@ class Game():
     def update_score(self, side):
         self.score["player" if side == "player" else "opponent"] += 1
 
+        for paddle in self.paddle_sprites:
+            paddle.reset()
+
+        for ball in self.ball_sprites:
+            ball.kill()
+        new_ball = Ball((self.all_sprites, self.ball_sprites), self.paddle_sprites, self.update_score)
+        new_ball.reset_time = pygame.time.get_ticks()
+
     def reset_game(self):
         self.paused = True
-        self.all_sprites.reset()
+        self.spawn_power_up_event = pygame.event.custom_type()
         self.score = {"player": 0, "opponent": 0}
         with open(join("data", "score.txt"), "w") as score_file:
             json.dump(self.score, score_file)
+
+        for paddle in self.paddle_sprites:
+            paddle.reset()
+
+        for ball in self.ball_sprites:
+            ball.kill()
+        Ball((self.all_sprites, self.ball_sprites), self.paddle_sprites, self.update_score)
+        self.spawn_power_up_event = pygame.event.custom_type()
+
+        for powerup in self.powerup_sprites:
+            powerup.kill()
+
+    def spawn_powerup(self):
+        random_powerup = randint(0, 2)
+        random_pos = (randint(400, WINDOW_WIDTH - 400), randint(50, WINDOW_HEIGHT - 50))
+        if random_powerup == 0:
+            SpeedPowerUp((self.all_sprites, self.powerup_sprites), self.ball_sprites, random_pos)
+        elif random_powerup == 1:
+            BallPowerUp((self.all_sprites, self.powerup_sprites), self.ball_sprites, random_pos, (self.all_sprites, self.ball_sprites), self.paddle_sprites, self.update_score)
+        elif random_powerup == 2:
+            PedalPowerUp((self.all_sprites, self.powerup_sprites), self.ball_sprites, random_pos, self.player, self.opponent)
 
 if __name__ == "__main__":
     game = Game()

@@ -12,7 +12,3 @@ class AllSprites(pygame.sprite.Group):
 
         for sprite in self:
             self.display_surface.blit(sprite.image, sprite.rect)
-
-    def reset(self):
-         for sprite in self:
-             sprite.reset()
